@@ -1,0 +1,21 @@
+{
+  "name": "opspilot-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpsPilot AI monorepo foundation",
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "pnpm --parallel --filter './apps/web' --filter './apps/api' --filter './services/ai-service' dev",
+    "build": "pnpm -r --filter './apps/web' --filter './apps/api' --filter './packages/shared' --filter './services/ai-service' build",
+    "lint": "pnpm -r --filter './apps/web' --filter './apps/api' --filter './packages/shared' --filter './services/ai-service' lint",
+    "test": "pnpm -r --filter './apps/web' --filter './apps/api' --filter './packages/shared' --filter './services/ai-service' test"
+  }
+}
+
+
+
+
+
+
+
+
