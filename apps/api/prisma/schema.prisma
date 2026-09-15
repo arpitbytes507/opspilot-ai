@@ -1,0 +1,321 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum EventType {
+  ERROR
+  WARNING
+  INFO
+  PERFORMANCE
+  DEPLOYMENT
+}
+
+enum IncidentStatus {
+  DETECTED
+  OPEN
+  INVESTIGATING
+  MITIGATED
+  RESOLVED
+  POSTMORTEM
+}
+
+enum IncidentSeverity {
+  P1
+  P2
+  P3
+  P4
+}
+
+enum DeploymentStatus {
+  STARTED
+  SUCCESS
+  FAILED
+  ROLLED_BACK
+}
+
+enum AnalysisType {
+  ROOT_CAUSE
+  INCIDENT_SUMMARY
+  RECOMMENDATION
+  POSTMORTEM
+}
+
+model User {
+  id                      String               @id @default(uuid()) @db.Uuid
+  email                   String               @unique
+  passwordHash            String
+  name                    String
+  avatarUrl               String?
+  isActive                Boolean              @default(true)
+  lastLoginAt             DateTime?
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  organizationMemberships OrganizationMember[]
+  assignedIncidents       Incident[]           @relation("IncidentAssignee")
+  deployments             Deployment[]         @relation("DeploymentDeployer")
+  auditLogs               AuditLog[]
+}
+
+model Organization {
+  id                  String               @id @default(uuid()) @db.Uuid
+  name                String
+  slug                String               @unique
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  members             OrganizationMember[]
+  projects            Project[]
+  serviceEnvironments ServiceEnvironment[]
+  apiKeys             ApiKey[]
+  events              Event[]
+  incidents           Incident[]
+  deployments         Deployment[]
+  aiAnalyses          AIAnalysis[]
+  auditLogs           AuditLog[]
+  services            Service[]
+}
+
+model OrganizationMember {
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String           @db.Uuid
+  userId         String           @db.Uuid
+  role           OrganizationRole
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+model Project {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  name           String
+  slug           String
+  description    String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  services       Service[]
+  events         Event[]
+  incidents      Incident[]
+  deployments    Deployment[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, createdAt])
+}
+
+model Service {
+  id             String               @id @default(uuid()) @db.Uuid
+  organizationId String               @db.Uuid
+  projectId      String               @db.Uuid
+  name           String
+  slug           String
+  description    String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  project        Project              @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  environments   ServiceEnvironment[]
+  events         Event[]
+  incidents      Incident[]
+  deployments    Deployment[]
+
+  @@unique([projectId, slug])
+  @@index([organizationId])
+}
+
+model ServiceEnvironment {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  serviceId      String       @db.Uuid
+  name           String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  service        Service      @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  apiKeys        ApiKey[]
+  events         Event[]
+  incidents      Incident[]
+  deployments    Deployment[]
+
+  @@unique([serviceId, name])
+  @@index([organizationId])
+}
+
+model ApiKey {
+  id                   String             @id @default(uuid()) @db.Uuid
+  organizationId       String             @db.Uuid
+  serviceEnvironmentId String             @db.Uuid
+  name                 String
+  keyPrefix            String
+  keyHash              String             @unique
+  lastUsedAt           DateTime?
+  expiresAt            DateTime?
+  revokedAt            DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  organization         Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  serviceEnvironment   ServiceEnvironment @relation(fields: [serviceEnvironmentId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId])
+  @@index([serviceEnvironmentId])
+}
+
+model Event {
+  id                   String             @id @default(uuid()) @db.Uuid
+  organizationId       String             @db.Uuid
+  projectId            String             @db.Uuid
+  serviceId            String             @db.Uuid
+  serviceEnvironmentId String             @db.Uuid
+  type                 EventType
+  level                String
+  message              String
+  source               String
+  timestamp            DateTime
+  traceId              String?
+  requestId            String?
+  metadata             Json?
+  payload              Json?
+  createdAt            DateTime           @default(now())
+  organization         Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  project              Project            @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  service              Service            @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  serviceEnvironment   ServiceEnvironment @relation(fields: [serviceEnvironmentId], references: [id], onDelete: Restrict)
+  incidentEvents       IncidentEvent[]
+
+  @@index([organizationId, createdAt])
+  @@index([projectId, createdAt])
+  @@index([serviceId, timestamp])
+  @@index([serviceEnvironmentId, timestamp])
+  @@index([organizationId, type, timestamp])
+  @@index([traceId])
+  @@index([requestId])
+}
+
+model Incident {
+  id                   String             @id @default(uuid()) @db.Uuid
+  organizationId       String             @db.Uuid
+  projectId            String             @db.Uuid
+  serviceId            String             @db.Uuid
+  serviceEnvironmentId String             @db.Uuid
+  title                String
+  description          String?
+  status               IncidentStatus
+  severity             IncidentSeverity
+  detectedAt           DateTime
+  startedAt            DateTime?
+  mitigatedAt          DateTime?
+  resolvedAt           DateTime?
+  assignedToUserId     String?            @db.Uuid
+  rootCause            String?
+  rootCauseConfidence  Float?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  organization         Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  project              Project            @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  service              Service            @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  serviceEnvironment   ServiceEnvironment @relation(fields: [serviceEnvironmentId], references: [id], onDelete: Restrict)
+  assignedTo           User?              @relation("IncidentAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  incidentEvents       IncidentEvent[]
+  aiAnalyses           AIAnalysis[]
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, status])
+  @@index([serviceId, detectedAt])
+  @@index([assignedToUserId])
+}
+
+model IncidentEvent {
+  id         String   @id @default(uuid()) @db.Uuid
+  incidentId String   @db.Uuid
+  eventId    String   @db.Uuid
+  createdAt  DateTime @default(now())
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([incidentId, eventId])
+  @@index([eventId])
+}
+
+model Deployment {
+  id                   String             @id @default(uuid()) @db.Uuid
+  organizationId       String             @db.Uuid
+  projectId            String             @db.Uuid
+  serviceId            String             @db.Uuid
+  serviceEnvironmentId String             @db.Uuid
+  version              String
+  commitSha            String?
+  status               DeploymentStatus
+  deployedByUserId     String?            @db.Uuid
+  startedAt            DateTime
+  completedAt          DateTime?
+  metadata             Json?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  organization         Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  project              Project            @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  service              Service            @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  serviceEnvironment   ServiceEnvironment @relation(fields: [serviceEnvironmentId], references: [id], onDelete: Restrict)
+  deployedBy           User?              @relation("DeploymentDeployer", fields: [deployedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([serviceId, startedAt])
+  @@index([serviceEnvironmentId, startedAt])
+}
+
+model AIAnalysis {
+  id               String       @id @default(uuid()) @db.Uuid
+  organizationId   String       @db.Uuid
+  incidentId       String       @db.Uuid
+  analysisType     AnalysisType
+  rootCause        String?
+  confidence       Float?
+  evidence         Json?
+  recommendations  Json?
+  model            String
+  modelVersion     String?
+  promptVersion    String?
+  inputTokens      Int?
+  outputTokens     Int?
+  processingTimeMs Int?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  incident         Incident     @relation(fields: [incidentId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, createdAt])
+  @@index([incidentId, createdAt])
+}
+
+model AuditLog {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  userId         String?      @db.Uuid
+  action         String
+  resourceType   String
+  resourceId     String?
+  ipAddress      String?
+  userAgent      String?
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([userId, createdAt])
+  @@index([resourceType, resourceId])
+}
