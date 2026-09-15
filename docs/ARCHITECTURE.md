@@ -998,6 +998,18 @@ Important operations should support:
 * Idempotency
 * Timeouts
 * Error handling
+
+# 36. Phase 4 Resource Management
+
+The organization-scoped resource hierarchy is implemented in the Express API:
+
+```text
+Organization -> Project -> Service -> ServiceEnvironment -> ApiKey
+```
+
+The API verifies the authenticated user's membership before resolving any nested resource. Resource authorization then checks every parent relationship in the query, preventing IDs from another organization, project, or service from being used as a shortcut. Project, service, and environment deletion is blocked when historical or dependent records exist.
+
+API keys are high-entropy `opspk_` secrets. The database stores only a display prefix and SHA-256 hash. Creation and rotation return the full secret once; list and detail responses contain metadata only. Rotation revokes the prior record and creates a new one. Audit logs record resource actions and prefixes, never secrets or hashes.
 * Dead-letter queues
 * Health checks
 

@@ -493,12 +493,48 @@ PATCH /api/v1/environments/:environmentId
 
 # 15. API Key Management
 
+## Phase 4 Nested Resource API
+
+Projects, services, environments, and API keys use organization-nested routes:
+
+```text
+GET    /api/v1/organizations/:organizationId/projects
+POST   /api/v1/organizations/:organizationId/projects
+GET    /api/v1/organizations/:organizationId/projects/:projectId
+PATCH  /api/v1/organizations/:organizationId/projects/:projectId
+DELETE /api/v1/organizations/:organizationId/projects/:projectId
+
+GET    /api/v1/organizations/:organizationId/projects/:projectId/services
+POST   /api/v1/organizations/:organizationId/projects/:projectId/services
+GET    /api/v1/organizations/:organizationId/projects/:projectId/services/:serviceId
+PATCH  /api/v1/organizations/:organizationId/projects/:projectId/services/:serviceId
+DELETE /api/v1/organizations/:organizationId/projects/:projectId/services/:serviceId
+
+GET    /api/v1/organizations/:organizationId/projects/:projectId/services/:serviceId/environments
+POST   /api/v1/organizations/:organizationId/projects/:projectId/services/:serviceId/environments
+GET    /api/v1/organizations/:organizationId/projects/:projectId/services/:serviceId/environments/:environmentId
+PATCH  /api/v1/organizations/:organizationId/projects/:projectId/services/:serviceId/environments/:environmentId
+DELETE /api/v1/organizations/:organizationId/projects/:projectId/services/:serviceId/environments/:environmentId
+```
+
+Project slugs are unique per organization, service slugs per project, and environment names per service. Names and descriptions are trimmed and bounded; slugs use lowercase hyphenated syntax. Deletes return `409 Conflict` when dependent services, keys, events, incidents, or deployments exist.
+
 API keys are used for telemetry ingestion.
 
 ## Create API Key
 
 ```text
 POST /api/v1/environments/:environmentId/api-keys
+```
+
+The canonical Phase 4 route is the fully nested environment route:
+
+```text
+POST /api/v1/organizations/:organizationId/projects/:projectId/services/:serviceId/environments/:environmentId/api-keys
+GET  /api/v1/organizations/:organizationId/projects/:projectId/services/:serviceId/environments/:environmentId/api-keys
+GET  /api/v1/organizations/:organizationId/projects/:projectId/services/:serviceId/environments/:environmentId/api-keys/:apiKeyId
+POST /api/v1/organizations/:organizationId/projects/:projectId/services/:serviceId/environments/:environmentId/api-keys/:apiKeyId/revoke
+POST /api/v1/organizations/:organizationId/projects/:projectId/services/:serviceId/environments/:environmentId/api-keys/:apiKeyId/rotate
 ```
 
 Request:
@@ -523,6 +559,10 @@ Response:
 ```
 
 The full key should be returned only during creation.
+
+Keys are generated with Node cryptographic random bytes in the `opspk_` format. Only a short prefix and SHA-256 hash are stored. The full secret is returned once on creation or rotation, never returned by list/get, never logged, and never written to audit metadata or browser storage. Rotation revokes the old record and creates a new record so the history remains auditable. Revocation is idempotent.
+
+All routes require authentication and verified organization membership. Nested resource lookups verify organization, project, service, environment, and key ownership together. `OWNER` and `ADMIN` roles may manage resources; `MEMBER` and `VIEWER` have read-only access to this Phase 4 surface.
 
 The client should display a warning that the key cannot be retrieved later.
 

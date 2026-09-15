@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 import { apiRequest } from '../../lib/api';
 
@@ -54,6 +55,7 @@ export default function DashboardPage() {
               </article>
             ))}
           </div>
+          <Link href="/projects" className="mt-6 inline-block rounded-lg bg-sky-400 px-4 py-3 font-semibold text-slate-950">Manage projects</Link>
         </section>
       </div>
     </main>
