@@ -1634,6 +1634,36 @@ Advanced Analytics
 AI Remediation
 ```
 
+## Phase 3 Authentication
+
+The API uses a signed JWT stored in an HTTP-only cookie. The cookie is named
+by `AUTH_COOKIE_NAME`, uses `SameSite=Lax`, and is marked `Secure` in
+production. Tokens are never returned in response bodies or stored by the
+frontend in browser storage.
+
+Authentication endpoints are:
+
+```text
+POST /api/v1/auth/register
+POST /api/v1/auth/login
+POST /api/v1/auth/logout
+GET  /api/v1/auth/me
+```
+
+Organization endpoints verify the authenticated user's membership before
+returning tenant data:
+
+```text
+GET   /api/v1/organizations
+GET   /api/v1/organizations/:organizationId
+GET   /api/v1/organizations/:organizationId/members
+PATCH /api/v1/organizations/:organizationId/members/:userId
+```
+
+Role checks are centralized and hierarchical: `OWNER` > `ADMIN` > `MEMBER` >
+`VIEWER`. Role changes are owner-only and cannot remove the last organization
+owner.
+
 ---
 
 # 54. Final API Flow

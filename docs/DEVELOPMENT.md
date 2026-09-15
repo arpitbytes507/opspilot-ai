@@ -438,6 +438,23 @@ Frontend-exposed environment variables must never contain server secrets.
 
 ---
 
+Phase 3 API authentication requires these local environment variables in
+`apps/api/.env`:
+
+```text
+DATABASE_URL=
+PORT=8000
+NODE_ENV=development
+AUTH_COOKIE_NAME=opspilot_auth
+AUTH_SECRET=
+WEB_ORIGIN=http://localhost:3000
+```
+
+`AUTH_SECRET` must be a strong, private value of at least 32 characters. The
+API issues it only through an HTTP-only cookie. Organization routes verify the
+authenticated user's `OrganizationMember` record server-side before applying
+centralized role checks; frontend organization IDs and roles are not trusted.
+
 # 15. Git Rules
 
 Use Git continuously.

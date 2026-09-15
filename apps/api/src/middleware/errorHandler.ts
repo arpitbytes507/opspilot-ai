@@ -1,6 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
+import { ZodError } from 'zod';
 
 import type { ApiResponse } from '../types/http';
+import { HttpError } from '../utils/httpError';
 
 export const notFoundHandler = (req: Request, res: Response): void => {
   const requestId = req.get('x-request-id') || 'unknown';
@@ -23,12 +25,13 @@ export const errorHandler = (
   _next: NextFunction,
 ): void => {
   const requestId = req.get('x-request-id') || 'unknown';
-  const statusCode = typeof err.statusCode === 'number' ? err.statusCode : 500;
+  const statusCode = err instanceof HttpError ? err.statusCode : err instanceof ZodError ? 400 : 500;
+  const code = err instanceof HttpError ? err.code : err instanceof ZodError ? 'VALIDATION_ERROR' : 'INTERNAL_SERVER_ERROR';
 
   const payload: ApiResponse = {
     success: false,
     error: {
-      code: statusCode === 500 ? 'INTERNAL_SERVER_ERROR' : 'REQUEST_ERROR',
+      code,
       message: statusCode === 500 ? 'Internal server error' : err.message,
     },
   };

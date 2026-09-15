@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 
+import { config } from './config/env';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { loggerMiddleware } from './middleware/logger';
 import { requestIdMiddleware } from './middleware/requestId';
@@ -8,7 +9,7 @@ import apiRouter from './routes';
 
 const app = express();
 
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({ origin: config.webOrigin, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(requestIdMiddleware);
 app.use(loggerMiddleware);
