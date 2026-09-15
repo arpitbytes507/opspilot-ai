@@ -1010,6 +1010,25 @@ Organization -> Project -> Service -> ServiceEnvironment -> ApiKey
 The API verifies the authenticated user's membership before resolving any nested resource. Resource authorization then checks every parent relationship in the query, preventing IDs from another organization, project, or service from being used as a shortcut. Project, service, and environment deletion is blocked when historical or dependent records exist.
 
 API keys are high-entropy `opspk_` secrets. The database stores only a display prefix and SHA-256 hash. Creation and rotation return the full secret once; list and detail responses contain metadata only. Rotation revokes the prior record and creates a new one. Audit logs record resource actions and prefixes, never secrets or hashes.
+
+# 37. Phase 5 Telemetry Pipeline
+
+Telemetry follows this asynchronous path:
+
+```text
+Application
+  -> POST /api/v1/events
+  -> API key authentication
+  -> Zod validation and normalization
+  -> Redis rate limit and idempotency claim
+  -> BullMQ event-processing queue
+  -> Event worker
+  -> Prisma / PostgreSQL Event
+```
+
+The API key is the tenant boundary. The request body cannot provide or override organization, project, service, or environment IDs. The worker receives the server-derived IDs and the stable event UUID, then updates `ApiKey.lastUsedAt` after persistence. Queue jobs retry transient failures three times with exponential backoff. AI, anomaly detection, incident creation, and correlation are intentionally absent from this phase.
+
+Redis is required for ingestion availability but is not the source of truth. Idempotency records are Redis-backed with a configurable TTL, so the MVP does not provide durable idempotency after expiry or Redis data loss. The API and worker close Redis, queue, HTTP, and Prisma resources during shutdown.
 * Dead-letter queues
 * Health checks
 

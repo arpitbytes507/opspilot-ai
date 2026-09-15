@@ -613,10 +613,30 @@ POST /api/v1/events
 Authentication:
 
 ```text
-X-API-Key: opsp_live_xxxxxxxxx
+Authorization: Bearer opspk_xxxxxxxxx
 ```
 
 This endpoint uses an ingestion API key rather than normal user authentication.
+
+## Phase 5 Ingestion Contract
+
+`POST /api/v1/events` authenticates with `Authorization: Bearer opspk_...`; browser cookies are not required. The API resolves the API key to its environment, service, project, and organization, validates the event with Zod, applies the credential-scoped Redis rate limit, and enqueues the normalized event. It returns `202 Accepted` only after queue insertion succeeds. PostgreSQL persistence happens in the background worker.
+
+Supported `type` values are `ERROR`, `WARNING`, `INFO`, `PERFORMANCE`, and `DEPLOYMENT`. Supported `level` values are `ERROR`, `WARN`, `INFO`, and `DEBUG`. `timestamp` is optional ISO-8601 and defaults to server time; `source` defaults to `unknown`. `metadata` and `payload` are bounded JSON objects and are limited to 32KB each. The ingestion body limit is configured by `INGEST_BODY_LIMIT` and defaults to `256kb`.
+
+An optional `Idempotency-Key` is scoped to the API key and stored in Redis for `INGEST_IDEMPOTENCY_TTL_SECONDS` (24 hours by default). Replays return `202` with `status: duplicate` and the original event ID. Rate limits are configured with `INGEST_RATE_LIMIT_MAX` and `INGEST_RATE_LIMIT_WINDOW_SECONDS` and return `429` when exceeded.
+
+Example:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/events \
+  -H 'Authorization: Bearer opspk_example_only' \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: phase5-test-001' \
+  -d '{"type":"ERROR","level":"ERROR","message":"Database connection timeout","source":"api-server"}'
+```
+
+Responses use `401` for missing, malformed, revoked, or expired credentials, `400` for invalid payloads, `413` for oversized requests, `429` for rate limiting, and `503` when Redis or queue insertion is unavailable. Tenant IDs are not accepted from the event body.
 
 ---
 

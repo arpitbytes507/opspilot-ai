@@ -455,6 +455,34 @@ API issues it only through an HTTP-only cookie. Organization routes verify the
 authenticated user's `OrganizationMember` record server-side before applying
 centralized role checks; frontend organization IDs and roles are not trusted.
 
+# Phase 5 Local Development
+
+Telemetry ingestion requires a reachable Redis instance. Set `REDIS_URL` in
+`apps/api/.env`; local development can use `redis://localhost:6379` or a
+managed Redis URL. For Upstash, use the native `rediss://` connection string
+including its password and port `6379`; the Upstash REST `https://` URL is not
+compatible with BullMQ. The Phase 5 defaults are suitable for development:
+
+```text
+INGEST_RATE_LIMIT_MAX=600
+INGEST_RATE_LIMIT_WINDOW_SECONDS=60
+INGEST_IDEMPOTENCY_TTL_SECONDS=86400
+INGEST_BODY_LIMIT=256kb
+```
+
+Run the API and worker in separate terminals:
+
+```bash
+pnpm --filter @opspilot-ai/api dev
+pnpm --filter @opspilot-ai/api dev:worker
+```
+
+The API returns `202 Accepted` after an event enters BullMQ. The worker then
+persists the event through Prisma and updates the ingestion key's
+`lastUsedAt`. Redis-backed idempotency is scoped to an API key and expires
+after the configured TTL. Incident detection, analytics, and AI processing
+are not part of Phase 5.
+
 # 15. Git Rules
 
 Use Git continuously.

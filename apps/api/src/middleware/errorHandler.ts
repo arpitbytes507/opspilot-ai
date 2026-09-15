@@ -25,8 +25,9 @@ export const errorHandler = (
   _next: NextFunction,
 ): void => {
   const requestId = req.get('x-request-id') || 'unknown';
-  const statusCode = err instanceof HttpError ? err.statusCode : err instanceof ZodError ? 400 : 500;
-  const code = err instanceof HttpError ? err.code : err instanceof ZodError ? 'VALIDATION_ERROR' : 'INTERNAL_SERVER_ERROR';
+  const bodyParserError = err as Error & { type?: string };
+  const statusCode = err instanceof HttpError ? err.statusCode : err instanceof ZodError ? 400 : bodyParserError.type === 'entity.too.large' ? 413 : err instanceof SyntaxError ? 400 : 500;
+  const code = err instanceof HttpError ? err.code : err instanceof ZodError ? 'VALIDATION_ERROR' : bodyParserError.type === 'entity.too.large' ? 'REQUEST_TOO_LARGE' : err instanceof SyntaxError ? 'INVALID_JSON' : 'INTERNAL_SERVER_ERROR';
 
   const payload: ApiResponse = {
     success: false,
