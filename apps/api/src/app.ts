@@ -10,7 +10,19 @@ import eventRoutes from './routes/eventRoutes';
 
 const app = express();
 
-app.use(cors({ origin: config.webOrigin, credentials: true }));
+const allowedOrigins = new Set([config.webOrigin, 'http://localhost:3000', 'http://127.0.0.1:3000']);
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error('CORS origin not allowed'));
+  },
+  credentials: true,
+}));
 app.use(requestIdMiddleware);
 app.use(loggerMiddleware);
 

@@ -73,6 +73,17 @@ describe('authentication routes', () => {
     expect(createdUser.passwordHash).not.toBe('secure-password');
   });
 
+  it('allows browser requests from localhost and 127.0.0.1 origins', async () => {
+    const response = await request(app)
+      .options('/api/v1/auth/me')
+      .set('Origin', 'http://127.0.0.1:3000')
+      .set('Access-Control-Request-Method', 'GET');
+
+    expect(response.status).toBe(204);
+    expect(response.headers['access-control-allow-origin']).toBe('http://127.0.0.1:3000');
+    expect(response.headers['access-control-allow-credentials']).toBe('true');
+  });
+
   it('rejects duplicate registration', async () => {
     vi.spyOn(prisma, '$transaction').mockImplementationOnce(async (callback) => callback({
       user: { findUnique: vi.fn().mockResolvedValue(developmentUser) },
