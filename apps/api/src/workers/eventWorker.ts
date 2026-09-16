@@ -5,6 +5,7 @@ import { closeRedis, getRedisClient } from '../lib/redis';
 import { eventQueueName } from '../queues/eventQueue';
 import type { NormalizedEvent } from '../types/ingestion';
 import { prisma } from '../lib/prisma';
+import { evaluateEventForIncidentDetection } from '../services/detectionService';
 
 export const processEvent = async (event: NormalizedEvent): Promise<void> => {
   try {
@@ -29,7 +30,47 @@ export const processEvent = async (event: NormalizedEvent): Promise<void> => {
   } catch (error: unknown) {
     if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002')) throw error;
   }
-  await prisma.apiKey.update({ where: { id: event.apiKeyId }, data: { lastUsedAt: new Date() } });
+
+  try {
+    const detection = await evaluateEventForIncidentDetection(event);
+    if (detection) {
+      console.info(JSON.stringify({
+        message: 'Incident detection rule triggered',
+        eventId: event.id,
+        rule: detection.rule,
+        severity: detection.severity,
+        organizationId: event.organizationId,
+        serviceId: event.serviceId,
+        environmentId: event.serviceEnvironmentId,
+      }));
+    }
+  } catch (error: unknown) {
+    console.error(JSON.stringify({
+      message: 'Incident detection failed after telemetry persisted',
+      eventId: event.id,
+      serviceId: event.serviceId,
+      environmentId: event.serviceEnvironmentId,
+      organizationId: event.organizationId,
+      error: error instanceof Error ? error.message : String(error),
+    }));
+  }
+
+  if (!event.apiKeyId) return;
+
+  try {
+    await prisma.apiKey.update({ where: { id: event.apiKeyId }, data: { lastUsedAt: new Date() } });
+  } catch (error: unknown) {
+    const prismaError = error as { code?: string };
+    if (prismaError?.code === 'P2025') {
+      return;
+    }
+    console.warn(JSON.stringify({
+      message: 'API key usage timestamp update failed',
+      eventId: event.id,
+      apiKeyId: event.apiKeyId,
+      error: error instanceof Error ? error.message : String(error),
+    }));
+  }
 };
 
 export const startEventWorker = (): Worker<NormalizedEvent> => {
