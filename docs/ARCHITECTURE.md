@@ -56,6 +56,8 @@ The architecture should prioritize:
 
 # 3. Frontend
 
+The Phase 7 web application provides an authenticated shell with Dashboard, Projects, and Incidents navigation. Dashboard and incident pages consume the Express API with cookie credentials; they do not access Prisma or store tokens in browser storage. Incident detail renders backend-provided lifecycle state, correlated events, deployment context, and a deliberate placeholder for future AI analysis.
+
 ## Technology
 
 * Next.js

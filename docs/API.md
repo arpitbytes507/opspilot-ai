@@ -816,6 +816,23 @@ The implementation should avoid expensive offset pagination for very large telem
 
 # 22. Incidents
 
+## Implemented incident management endpoints
+
+The current web application uses these authenticated, organization-resolved endpoints:
+
+```text
+GET   /api/v1/incidents
+GET   /api/v1/incidents/:incidentId
+PATCH /api/v1/incidents/:incidentId
+GET   /api/v1/incidents/:incidentId/events
+GET   /api/v1/incidents/:incidentId/deployments
+GET   /api/v1/dashboard/summary
+```
+
+Incident listing supports `status`, `severity`, `serviceId`, `environmentId`, `sort` (`newest`, `oldest`, `severity`, `updated`), `page`, and `pageSize` (maximum 100). Responses include bounded records and pagination metadata. The dashboard summary includes live incident counts, recent incidents, recent events, and service/environment health counts.
+
+Incident mutations accept only `status`, `severity`, and `assignedToUserId`. Status transitions are `DETECTED -> OPEN -> INVESTIGATING -> MITIGATED -> RESOLVED -> POSTMORTEM`; invalid transitions return `409`. Incident mutations require `MEMBER` or higher and write an audit log. Organization membership is resolved from the authenticated cookie session, and assignees must belong to the same organization.
+
 ## List Incidents
 
 ```text

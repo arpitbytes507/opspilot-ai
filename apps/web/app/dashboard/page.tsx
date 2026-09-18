@@ -1,63 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
+import { useEffect, useState } from 'react';
+import AppShell from '../../components/AppShell';
 import { apiRequest } from '../../lib/api';
 
-type CurrentUser = {
-  user: { name: string; email: string };
-  organizations: { id: string; name: string; role: string }[];
-};
+type Dashboard = { summary: Record<string, number>; recentIncidents: { id: string; title: string; status: string; severity: string; detectedAt: string; service: { name: string }; serviceEnvironment: { name: string } }[]; recentEvents: { id: string; type: string; message: string; timestamp: string; service: { name: string } }[]; serviceHealth: { id: string; name: string; environments: { id: string; name: string; _count: { events: number; incidents: number }; incidents: { id: string; title: string; severity: string }[] }[] }[] };
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    void apiRequest<CurrentUser>('/auth/me')
-      .then(setCurrentUser)
-      .catch((requestError: unknown) => {
-        setError(requestError instanceof Error ? requestError.message : 'Authentication required');
-        router.replace('/login');
-      });
-  }, [router]);
-
-  const logout = async () => {
-    await apiRequest('/auth/logout', { method: 'POST' });
-    router.replace('/login');
-  };
-
-  if (error || !currentUser) {
-    return <main className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-300">Loading workspace...</main>;
-  }
-
-  return (
-    <main className="min-h-screen bg-slate-950 px-6 py-12 text-slate-100">
-      <div className="mx-auto max-w-5xl">
-        <header className="flex items-start justify-between border-b border-slate-800 pb-8">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-300">OpsPilot AI</p>
-            <h1 className="mt-3 text-4xl font-bold text-white">Welcome, {currentUser.user.name}</h1>
-            <p className="mt-2 text-slate-400">{currentUser.user.email}</p>
-          </div>
-          <button onClick={() => void logout()} className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-400 hover:text-white">Log out</button>
-        </header>
-        <section className="mt-10">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Organizations</p>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {currentUser.organizations.map((organization) => (
-              <article key={organization.id} className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-                <h2 className="text-lg font-semibold text-white">{organization.name}</h2>
-                <p className="mt-2 text-sm text-sky-300">{organization.role}</p>
-              </article>
-            ))}
-          </div>
-          <Link href="/projects" className="mt-6 inline-block rounded-lg bg-sky-400 px-4 py-3 font-semibold text-slate-950">Manage projects</Link>
-        </section>
-      </div>
-    </main>
-  );
+  useEffect(() => { const load = () => void apiRequest<Dashboard>('/dashboard/summary').then(setData).catch((requestError: unknown) => setError(requestError instanceof Error ? requestError.message : 'Unable to load dashboard')); load(); const timer = window.setInterval(load, 60000); return () => window.clearInterval(timer); }, []);
+  return <AppShell title="Dashboard" eyebrow="Operational overview"><section className="metric-grid">{data ? Object.entries(data.summary).map(([label, value]) => <article className="metric" key={label}><span>{label.replace(/[A-Z]/g, (letter) => ` ${letter}`).replace(/^./, (letter) => letter.toUpperCase())}</span><strong>{value}</strong></article>) : <div className="panel">{error || 'Loading dashboard...'}</div>}</section><div className="dashboard-grid"><section className="panel"><div className="section-heading"><div><p className="eyebrow">Live queue</p><h2>Recent incidents</h2></div><Link href="/incidents" className="text-button">View all</Link></div>{data?.recentIncidents.length ? <div className="table-wrap"><table><thead><tr><th>Incident</th><th>Severity</th><th>Status</th><th>Detected</th></tr></thead><tbody>{data.recentIncidents.map((incident) => <tr key={incident.id}><td><Link href={`/incident/${incident.id}`} className="row-title">{incident.title}</Link><small>{incident.service.name} · {incident.serviceEnvironment.name}</small></td><td><span className={`severity severity-${incident.severity.toLowerCase()}`}>{incident.severity}</span></td><td>{incident.status}</td><td>{new Date(incident.detectedAt).toLocaleString()}</td></tr>)}</tbody></table></div> : <div className="empty">{error || 'No incident activity yet.'}</div>}</section><section className="panel"><div className="section-heading"><div><p className="eyebrow">Telemetry</p><h2>Recent events</h2></div></div>{data?.recentEvents.length ? <div className="event-list">{data.recentEvents.map((event) => <div className="event-item" key={event.id}><span className="event-type">{event.type}</span><div><strong>{event.message}</strong><small>{event.service.name} · {new Date(event.timestamp).toLocaleString()}</small></div></div>)}</div> : <div className="empty">No telemetry received yet.</div>}</section></div>{data && <section className="panel"><div className="section-heading"><div><p className="eyebrow">Coverage</p><h2>Service health</h2></div></div>{data.serviceHealth.length ? <div className="event-list">{data.serviceHealth.flatMap((service) => service.environments.map((environment) => <div className="event-item" key={environment.id}><span className="event-type">{environment.incidents.length ? 'ACTIVE' : 'HEALTHY'}</span><div><strong>{service.name} · {environment.name}</strong><small>{environment._count.events} events · {environment._count.incidents} incidents</small></div></div>))}</div> : <div className="empty">No services configured yet.</div>}</section>}</AppShell>;
 }

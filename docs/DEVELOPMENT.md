@@ -36,6 +36,8 @@ before making significant architectural changes.
 
 # 2. Repository Structure
 
+Phase 7 validation should include the API test, lint, build, Prisma validation/generation, web lint/build, and `git diff --check`. The dashboard and incident UI use real database-backed responses only; empty database results render empty states rather than fallback operational data.
+
 The target monorepo structure is:
 
 ```text

@@ -1,0 +1,15 @@
+'use client';
+
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import AppShell from '../../components/AppShell';
+import { apiRequest } from '../../lib/api';
+
+type Incident = { id: string; title: string; status: string; severity: string; detectedAt: string; service: { name: string }; serviceEnvironment: { name: string }; assignedTo: { name: string } | null };
+type Result = { items: Incident[]; pagination: { page: number; totalPages: number; total: number } };
+
+export default function IncidentsPage() {
+  const [result, setResult] = useState<Result | null>(null); const [status, setStatus] = useState(''); const [severity, setSeverity] = useState(''); const [page, setPage] = useState(1); const [error, setError] = useState('');
+  useEffect(() => { const params = new URLSearchParams({ page: String(page), pageSize: '20', ...(status ? { status } : {}), ...(severity ? { severity } : {}) }); void apiRequest<Result>(`/incidents?${params}`).then(setResult).catch((requestError: unknown) => setError(requestError instanceof Error ? requestError.message : 'Unable to load incidents')); }, [page, severity, status]);
+  return <AppShell title="Incidents" eyebrow="Incident management"><section className="toolbar"><select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="">All statuses</option><option>DETECTED</option><option>OPEN</option><option>INVESTIGATING</option><option>MITIGATED</option><option>RESOLVED</option><option>POSTMORTEM</option></select><select value={severity} onChange={(event) => { setSeverity(event.target.value); setPage(1); }}><option value="">All severities</option><option>P1</option><option>P2</option><option>P3</option><option>P4</option></select><span className="toolbar-count">{result?.pagination.total ?? 0} incidents</span></section>{error && <p className="alert">{error}</p>}<section className="panel table-wrap">{result?.items.length ? <table><thead><tr><th>Severity</th><th>Incident</th><th>Status</th><th>Service</th><th>Detected</th><th>Assignee</th></tr></thead><tbody>{result.items.map((incident) => <tr key={incident.id}><td><span className={`severity severity-${incident.severity.toLowerCase()}`}>{incident.severity}</span></td><td><Link href={`/incident/${incident.id}`} className="row-title">{incident.title}</Link></td><td>{incident.status}</td><td>{incident.service.name}<small>{incident.serviceEnvironment.name}</small></td><td>{new Date(incident.detectedAt).toLocaleString()}</td><td>{incident.assignedTo?.name || 'Unassigned'}</td></tr>)}</tbody></table> : <div className="empty">{result ? 'No incidents match these filters.' : 'Loading incidents...'}</div>}</section>{result && result.pagination.totalPages > 1 && <div className="pagination"><button className="button secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</button><span>Page {page} of {result.pagination.totalPages}</span><button className="button secondary" disabled={page >= result.pagination.totalPages} onClick={() => setPage(page + 1)}>Next</button></div>}</AppShell>;
+}

@@ -62,3 +62,23 @@ export const requireRole = (minimumRole: OrganizationRole) => (
 
   next();
 };
+
+export const requirePrimaryOrganizationMembership = async (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    if (!req.auth) throw new HttpError(401, 'UNAUTHENTICATED', 'Authentication required');
+    const membership = await prisma.organizationMember.findFirst({
+      where: { userId: req.auth.id },
+      select: { organizationId: true, userId: true, role: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (!membership) throw new HttpError(403, 'FORBIDDEN', 'Organization membership is required');
+    req.membership = membership;
+    next();
+  } catch (error: unknown) {
+    next(error);
+  }
+};
