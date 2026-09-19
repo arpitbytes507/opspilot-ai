@@ -65,6 +65,27 @@ The frontend must never access PostgreSQL directly.
 
 The frontend must never call the AI service directly.
 
+## AI Root Cause Analysis
+
+The Express API exposes authenticated, organization-scoped incident enrichment:
+
+```text
+GET  /api/v1/incidents/:incidentId/ai/root-cause
+POST /api/v1/incidents/:incidentId/ai/root-cause
+```
+
+The GET endpoint returns the latest persisted `AIAnalysis`, or `null` when none
+exists. The POST endpoint explicitly generates a new analysis and preserves
+previous records. Members and higher roles may generate analysis; viewers may
+only retrieve it. Express builds bounded context from the incident, linked and
+preceding events, deployments, and recent history, then calls FastAPI with
+`X-AI-Service-Key`. The frontend never calls FastAPI.
+
+The response is structured JSON containing a likely root cause, confidence in
+the range 0 to 1, summary, evidence references, safe recommendations, and
+alternative causes. AI failures return controlled `AI_ANALYSIS_UNAVAILABLE` or
+`AI_ANALYSIS_INVALID_RESPONSE` errors and never mutate incident state.
+
 All application requests go through the Express API.
 
 ---

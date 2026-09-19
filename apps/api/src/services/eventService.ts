@@ -3,7 +3,7 @@ import type Redis from 'ioredis';
 
 import { config } from '../config/env';
 import { getRedisClient } from '../lib/redis';
-import { getEventQueue } from '../queues/eventQueue';
+import { eventQueueName, getEventQueue } from '../queues/eventQueue';
 import type { IngestionContext, NormalizedEvent } from '../types/ingestion';
 import { eventPayloadSchema, type EventPayload } from '../validators/eventValidators';
 import { HttpError } from '../utils/httpError';
@@ -83,6 +83,7 @@ export const enqueueEvent = async (
 
   try {
     await getEventQueue().add('persist-event', event, { jobId: event.id });
+    console.info(JSON.stringify({ message: 'Telemetry event queued', eventId: event.id, queue: eventQueueName, organizationId: event.organizationId, projectId: event.projectId, serviceId: event.serviceId, environmentId: event.serviceEnvironmentId }));
   } catch (error: unknown) {
     if (claimedKey) {
       try { await redis.del(claimedKey); } catch { }

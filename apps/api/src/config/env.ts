@@ -18,4 +18,7 @@ export const config = {
   get incidentCorrelationWindowSeconds(): number { return Number(process.env.INCIDENT_CORRELATION_WINDOW_SECONDS || 900); },
   get performanceLatencyThresholdMs(): number { return Number(process.env.PERFORMANCE_LATENCY_THRESHOLD_MS || 2000); },
   get performanceDegradationThreshold(): number { return Number(process.env.PERFORMANCE_DEGRADATION_THRESHOLD || 10); },
+  get aiServiceUrl(): string { return process.env.AI_SERVICE_URL || 'http://localhost:8001'; },
+  get aiServiceSecret(): string { return process.env.AI_SERVICE_SECRET || ''; },
+  get aiRequestTimeoutMs(): number { return Number(process.env.AI_REQUEST_TIMEOUT_MS || 30000); },
 };

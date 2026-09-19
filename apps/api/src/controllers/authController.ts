@@ -146,6 +146,7 @@ export const currentUser = async (req: Request, res: Response): Promise<void> =>
       role: true,
       organization: { select: { id: true, name: true, slug: true } },
     },
+    orderBy: { createdAt: 'asc' },
   });
 
   res.status(200).json({

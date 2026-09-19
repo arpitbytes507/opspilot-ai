@@ -3,7 +3,7 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch src/server.ts & tsx watch src/worker.ts & wait",
     "dev:worker": "tsx watch src/worker.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
@@ -14,6 +14,7 @@
     "prisma:validate": "prisma validate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
+    "diagnose:organization": "tsx scripts/diagnoseOrganization.ts",
     "test": "vitest run"
   },
   "dependencies": {

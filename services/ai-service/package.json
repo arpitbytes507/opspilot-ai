@@ -6,6 +6,6 @@
     "start": "uvicorn app.main:app --host 0.0.0.0 --port 8001",
     "build": "python -m compileall app",
     "lint": "python -m compileall app",
-    "test": "python -m compileall app"
+    "test": "python -m unittest discover -s tests -p 'test_*.py'"
   }
 }

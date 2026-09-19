@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { apiRequest } from '../../lib/api';
+import { ApiClientError, apiRequest } from '../../lib/api';
 
 type Organization = { id: string; name: string; role: string };
 type Project = { id: string; name: string; slug: string; description: string | null };
@@ -22,12 +22,12 @@ export default function ProjectsPage() {
     try {
       const session = await apiRequest<Session>('/auth/me');
       const currentOrganization = session.organizations[0];
-      if (!currentOrganization) throw new Error('No organization is available');
+      if (!currentOrganization) throw new Error('No organization membership is available for this account.');
       setOrganization(currentOrganization);
       setProjects(await apiRequest<Project[]>(`/organizations/${currentOrganization.id}/projects`));
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Unable to load projects');
-      router.replace('/login');
+      if (requestError instanceof ApiClientError && requestError.status === 401) router.replace('/login');
     } finally {
       setLoading(false);
     }

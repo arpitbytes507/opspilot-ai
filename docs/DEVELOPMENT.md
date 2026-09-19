@@ -274,6 +274,22 @@ services/ai-service/
 
 AI prompts must not be scattered randomly throughout the codebase.
 
+## Phase 8 AI RCA
+
+Set `AI_SERVICE_URL`, `AI_SERVICE_SECRET`, and `AI_REQUEST_TIMEOUT_MS` in the
+API environment. Set the matching `AI_SERVICE_SECRET`, `LLM_PROVIDER`,
+`LLM_MODEL`, and `LLM_API_KEY` only in the AI-service environment. Credentials
+never belong in the browser, prompts, telemetry, logs, or source control.
+
+RCA generation is explicit and organization-scoped. Context is bounded to 50
+events, 10 deployments, and 20 recent incidents, with a 24-hour service window.
+The Python service validates the structured response with Pydantic and the API
+validates it again with Zod before persistence. Each regeneration creates a new
+`AIAnalysis`; GET returns the latest record. Tests must use a mocked provider and
+must cover authorization, tenant isolation, malformed output, timeout/provider
+failure, confidence bounds, secret redaction, and unchanged incident state on
+failure. No real provider call is required for normal test runs.
+
 ---
 
 # 10. Technology Standards

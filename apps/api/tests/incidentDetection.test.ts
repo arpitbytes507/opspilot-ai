@@ -49,7 +49,7 @@ const createTenant = async (suffix: string) => {
   return { org, project, service, environment };
 };
 
-describe('incident detection', () => {
+describe('event worker persistence and incident detection', () => {
   beforeEach(async () => {
     await prisma.incidentEvent.deleteMany({});
     await prisma.incident.deleteMany({});
@@ -64,7 +64,7 @@ describe('incident detection', () => {
     await prisma.organization.deleteMany({});
   });
 
-  it('creates an incident for a production error burst', { timeout: 60000 }, async () => {
+  it('persists worker events before invoking production error-burst detection', { timeout: 60000 }, async () => {
     const tenant = await createTenant('burst');
 
     for (let index = 0; index < 10; index += 1) {
@@ -89,6 +89,8 @@ describe('incident detection', () => {
 
     expect(incidents.length).toBeGreaterThanOrEqual(1);
     expect(incidents[0]?.severity).toBe('P2');
+    const persistedEvents = await prisma.event.count({ where: { organizationId: tenant.org.id, serviceId: tenant.service.id } });
+    expect(persistedEvents).toBe(10);
     const links = await prisma.incidentEvent.count({
       where: { incidentId: incidents[0].id },
     });

@@ -58,6 +58,17 @@ The architecture should prioritize:
 
 The Phase 7 web application provides an authenticated shell with Dashboard, Projects, and Incidents navigation. Dashboard and incident pages consume the Express API with cookie credentials; they do not access Prisma or store tokens in browser storage. Incident detail renders backend-provided lifecycle state, correlated events, deployment context, and a deliberate placeholder for future AI analysis.
 
+## AI Root Cause Analysis
+
+AI is an enrichment layer after deterministic Phase 6 detection. The request
+path is Next.js -> Express authorization/context builder -> internal FastAPI ->
+Express Zod validation -> Prisma `AIAnalysis` -> Next.js. FastAPI has no Prisma
+access and is not public. Express sends only bounded, sanitized telemetry and
+uses `AI_SERVICE_SECRET` for service authentication. Telemetry is treated as
+untrusted data in the versioned v1 prompt, including prompt-injection-like log
+messages. Missing provider configuration and provider failures produce an
+unavailable state rather than a fabricated result.
+
 ## Technology
 
 * Next.js

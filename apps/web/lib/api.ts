@@ -8,9 +8,14 @@ type ApiEnvelope<T> = {
 };
 
 export class ApiClientError extends Error {
-  public constructor(message: string) {
+  public readonly status: number;
+  public readonly code?: string;
+
+  public constructor(message: string, status = 0, code?: string) {
     super(message);
     this.name = 'ApiClientError';
+    this.status = status;
+    this.code = code;
   }
 }
 
@@ -26,7 +31,7 @@ export const apiRequest = async <T>(path: string, options: RequestInit = {}): Pr
   const body = (await response.json()) as ApiEnvelope<T>;
 
   if (!response.ok || !body.success) {
-    throw new ApiClientError(body.error?.message || body.message || 'Request failed');
+    throw new ApiClientError(body.error?.message || body.message || 'Request failed', response.status, body.error?.code);
   }
 
   return body.data as T;

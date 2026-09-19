@@ -5,6 +5,7 @@ import { recordAuditLog } from '../services/auditService';
 import { getPrimaryOrganization } from '../services/organizationContext';
 import { HttpError } from '../utils/httpError';
 import { incidentIdParamsSchema, incidentListQuerySchema, updateIncidentSchema } from '../validators/incidentValidators';
+import { createRootCauseAnalysis, getLatestRootCauseAnalysis } from '../services/ai/aiAnalysisService';
 
 const incidentSelect = {
   id: true, title: true, description: true, status: true, severity: true, detectedAt: true,
@@ -75,4 +76,18 @@ export const listIncidentDeployments = async (req: Request, res: Response): Prom
   if (!incident) throw new HttpError(404, 'INCIDENT_NOT_FOUND', 'Incident not found');
   const deployments = await prisma.deployment.findMany({ where: { organizationId: organization.organizationId, serviceId: incident.serviceId, serviceEnvironmentId: incident.serviceEnvironmentId, startedAt: { lte: incident.detectedAt } }, select: { id: true, version: true, commitSha: true, status: true, startedAt: true, completedAt: true, deployedBy: { select: { name: true, email: true } } }, orderBy: { startedAt: 'desc' }, take: 20 });
   res.json({ success: true, data: deployments });
+};
+
+export const getIncidentRootCause = async (req: Request, res: Response): Promise<void> => {
+  const organization = await getPrimaryOrganization(req.auth!.id);
+  const { incidentId } = incidentIdParamsSchema.parse(req.params);
+  const analysis = await getLatestRootCauseAnalysis(incidentId, organization.organizationId);
+  res.json({ success: true, data: analysis });
+};
+
+export const analyzeIncidentRootCause = async (req: Request, res: Response): Promise<void> => {
+  const organization = await getPrimaryOrganization(req.auth!.id);
+  const { incidentId } = incidentIdParamsSchema.parse(req.params);
+  const analysis = await createRootCauseAnalysis(incidentId, organization.organizationId);
+  res.status(201).json({ success: true, data: analysis });
 };
