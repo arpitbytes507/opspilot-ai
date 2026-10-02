@@ -51,6 +51,9 @@ const createTenant = async (suffix: string) => {
 
 describe('event worker persistence and incident detection', () => {
   beforeEach(async () => {
+    await prisma.aIConversationMessage.deleteMany({});
+    await prisma.aIConversation.deleteMany({});
+    await prisma.aIAnalysis.deleteMany({});
     await prisma.incidentEvent.deleteMany({});
     await prisma.incident.deleteMany({});
     await prisma.event.deleteMany({});

@@ -21,4 +21,11 @@ export const config = {
   get aiServiceUrl(): string { return process.env.AI_SERVICE_URL || 'http://localhost:8001'; },
   get aiServiceSecret(): string { return process.env.AI_SERVICE_SECRET || ''; },
   get aiRequestTimeoutMs(): number { return Number(process.env.AI_REQUEST_TIMEOUT_MS || 30000); },
+  get aiPromptVersions(): { rootCause: string; copilot: string; postmortem: string } {
+    return {
+      rootCause: process.env.RCA_PROMPT_VERSION || 'v1',
+      copilot: process.env.COPILOT_PROMPT_VERSION || 'v1',
+      postmortem: process.env.POSTMORTEM_PROMPT_VERSION || 'v1',
+    };
+  },
 };

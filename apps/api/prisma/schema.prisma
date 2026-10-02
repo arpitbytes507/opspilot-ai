@@ -52,6 +52,11 @@ enum AnalysisType {
   POSTMORTEM
 }
 
+enum AIConversationRole {
+  USER
+  ASSISTANT
+}
+
 model User {
   id                      String               @id @default(uuid()) @db.Uuid
   email                   String               @unique
@@ -66,6 +71,7 @@ model User {
   assignedIncidents       Incident[]           @relation("IncidentAssignee")
   deployments             Deployment[]         @relation("DeploymentDeployer")
   auditLogs               AuditLog[]
+  aiConversations         AIConversation[]
 }
 
 model Organization {
@@ -82,6 +88,7 @@ model Organization {
   incidents           Incident[]
   deployments         Deployment[]
   aiAnalyses          AIAnalysis[]
+  aiConversations    AIConversation[]
   auditLogs           AuditLog[]
   services            Service[]
 }
@@ -232,6 +239,7 @@ model Incident {
   assignedTo           User?              @relation("IncidentAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
   incidentEvents       IncidentEvent[]
   aiAnalyses           AIAnalysis[]
+  aiConversations     AIConversation[]
 
   @@index([organizationId, createdAt])
   @@index([organizationId, status])
@@ -275,6 +283,34 @@ model Deployment {
   @@index([organizationId, createdAt])
   @@index([serviceId, startedAt])
   @@index([serviceEnvironmentId, startedAt])
+}
+
+model AIConversation {
+  id             String                  @id @default(uuid()) @db.Uuid
+  organizationId String                  @db.Uuid
+  incidentId     String                  @db.Uuid
+  userId         String                  @db.Uuid
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  organization   Organization            @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  incident       Incident                @relation(fields: [incidentId], references: [id], onDelete: Restrict)
+  user           User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  messages      AIConversationMessage[]
+
+  @@unique([incidentId, userId])
+  @@index([organizationId, incidentId, updatedAt])
+}
+
+model AIConversationMessage {
+  id            String            @id @default(uuid()) @db.Uuid
+  conversationId String            @db.Uuid
+  role          AIConversationRole
+  content       String
+  structuredResponse Json?
+  createdAt     DateTime          @default(now())
+  conversation  AIConversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
 }
 
 model AIAnalysis {

@@ -8,8 +8,10 @@ load_dotenv()
 from fastapi import FastAPI, Header, HTTPException
 
 from app.schemas.rca import (
+    CopilotAnalysisResponse,
     IncidentAnalysisRequest,
     IncidentAnalysisResponse,
+    PostmortemAnalysisResponse,
     PROMPT_VERSION,
 )
 from app.services.provider import ProviderError, get_provider
@@ -38,7 +40,7 @@ def health() -> dict[str, str]:
 
 @app.post(
     "/analyze/incident",
-    response_model=IncidentAnalysisResponse,
+    response_model=IncidentAnalysisResponse | CopilotAnalysisResponse | PostmortemAnalysisResponse,
 )
 async def analyze_incident(
     payload: IncidentAnalysisRequest,
@@ -69,9 +71,7 @@ async def analyze_incident(
         )
 
         context = sanitize_context(
-            payload.model_dump(
-                exclude={"analysisType"}
-            )
+            payload.model_dump()
         )
 
         result, input_tokens, output_tokens = (
@@ -85,7 +85,7 @@ async def analyze_incident(
 
         result.update(
             {
-                "analysisType": "ROOT_CAUSE",
+            "analysisType": payload.analysisType,
                 "promptVersion": PROMPT_VERSION,
                 "model": result.get(
                     "model",
@@ -105,9 +105,12 @@ async def analyze_incident(
         
         logger.info("FINAL AI RESPONSE: %s", result)
 
-        return IncidentAnalysisResponse.model_validate(
-            result
-        )
+        response_models = {
+            "ROOT_CAUSE": IncidentAnalysisResponse,
+            "COPILOT": CopilotAnalysisResponse,
+            "POSTMORTEM": PostmortemAnalysisResponse,
+        }
+        return response_models[payload.analysisType].model_validate(result)
 
     except ProviderError as exc:
         logger.exception(

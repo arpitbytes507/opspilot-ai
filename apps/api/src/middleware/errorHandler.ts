@@ -38,5 +38,6 @@ export const errorHandler = (
   };
 
   console.error(`${new Date().toISOString()} [${requestId}] ${err.message}`);
+  console.error(err.stack);
   res.status(statusCode).set('X-Request-ID', requestId).json(payload);
 };

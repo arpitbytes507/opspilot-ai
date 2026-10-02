@@ -76,5 +76,64 @@ td small, .event-item small { display: block; margin-top: .25rem; color: rgb(100
 .toolbar { display: flex; align-items: center; gap: .7rem; margin-bottom: 1rem; }.toolbar-count { margin-left: auto; color: rgb(100 116 139); font-size: .85rem; }select { border: 1px solid rgb(51 65 85); background: rgb(15 23 42); color: rgb(226 232 240); border-radius: .4rem; padding: .6rem .7rem; }
 .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1rem; color: rgb(148 163 184); font-size: .85rem; }.back-link { display: inline-block; color: rgb(125 211 252); font-size: .85rem; text-decoration: none; }.incident-header { display: flex; justify-content: space-between; gap: 1rem; }.incident-header h2 { margin: .8rem 0 .3rem; color: white; font-size: 1.5rem; }.incident-header p { color: rgb(148 163 184); }.incident-tags, .action-group { display: flex; align-items: center; gap: .5rem; }.prose { color: rgb(203 213 225); line-height: 1.6; }.muted { color: rgb(100 116 139); }.section-gap { margin-top: 2rem; }.timeline { display: grid; gap: .9rem; margin-top: 1rem; }.timeline-item { display: flex; align-items: center; gap: .6rem; color: rgb(100 116 139); font-size: .85rem; }.timeline-item span { width: .55rem; height: .55rem; border: 1px solid rgb(71 85 105); border-radius: 50%; }.timeline-item.complete { color: rgb(226 232 240); }.timeline-item.complete span { border-color: rgb(45 212 191); background: rgb(45 212 191); }
 .rca-panel { border-color: rgb(14 116 144); }.rca-content { display: grid; gap: 1.5rem; margin-top: 1.5rem; }.rca-content h3 { color: white; font-size: 1.35rem; margin: .4rem 0 .7rem; }.rca-list { display: grid; gap: .75rem; padding: 0; margin: .8rem 0 0; list-style: none; }.rca-list li { display: grid; gap: .25rem; border-left: 2px solid rgb(51 65 85); padding-left: .8rem; color: rgb(203 213 225); }.rca-list a { color: rgb(125 211 252); text-decoration: none; }.rca-list span, .rca-list small { color: rgb(148 163 184); }
+.copilot-panel { border-color: rgb(13 148 136 / .65); }
+.copilot-status { border: 1px solid rgb(45 212 191 / .35); color: rgb(94 234 212); padding: .3rem .5rem; font-size: .65rem; font-weight: 800; letter-spacing: .1em; }
+.copilot-empty, .copilot-permission { margin: 1.25rem 0 0; }
+.copilot-thread { display: grid; gap: 1rem; margin-top: 1.25rem; }
+.copilot-exchange { display: grid; gap: .8rem; }
+.copilot-question { border-left: 2px solid rgb(56 189 248); padding: .2rem 0 .2rem .9rem; }
+.copilot-question p { margin: .25rem 0 0; color: rgb(226 232 240); line-height: 1.55; white-space: pre-wrap; }
+.copilot-speaker { color: rgb(125 211 252); font-size: .65rem; font-weight: 800; letter-spacing: .12em; }
+.copilot-answer { border: 1px solid rgb(30 41 59); background: rgb(2 6 23 / .55); padding: 1rem; border-radius: .5rem; }
+.copilot-answer-heading, .copilot-form-footer { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.copilot-confidence { color: rgb(148 163 184); font-size: .75rem; }
+.copilot-confidence-track { height: .3rem; margin-top: .65rem; overflow: hidden; background: rgb(30 41 59); }
+.copilot-confidence-track span { display: block; height: 100%; background: linear-gradient(90deg, rgb(20 184 166), rgb(56 189 248)); }
+.copilot-answer-text { margin: 1rem 0 0; }
+.copilot-findings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-top: 1rem; }
+.copilot-finding { min-width: 0; border-top: 2px solid rgb(51 65 85); padding: .75rem .15rem 0; }
+.copilot-finding h3, .copilot-followups h3 { margin: 0; color: rgb(226 232 240); font-size: .8rem; }
+.copilot-facts { border-color: rgb(45 212 191); }
+.copilot-inferences { border-color: rgb(251 191 36); }
+.copilot-actions { grid-column: 1 / -1; border-color: rgb(56 189 248); }
+.copilot-finding ul { display: grid; gap: .65rem; margin: .7rem 0 0; padding: 0; list-style: none; }
+.copilot-finding li { display: flex; align-items: flex-start; gap: .55rem; color: rgb(203 213 225); font-size: .82rem; line-height: 1.5; }
+.copilot-finding small { display: block; margin-top: .2rem; color: rgb(100 116 139); font-size: .72rem; overflow-wrap: anywhere; }
+.copilot-actions li > div { min-width: 0; }
+.copilot-actions li strong { color: rgb(226 232 240); }
+.copilot-priority { flex: 0 0 auto; border: 1px solid rgb(51 65 85); padding: .1rem .3rem; font-size: .6rem; font-weight: 800; letter-spacing: .04em; }
+.priority-high { border-color: rgb(251 113 133 / .55); color: rgb(253 164 175); }
+.priority-medium { border-color: rgb(251 191 36 / .55); color: rgb(253 230 138); }
+.priority-low { border-color: rgb(45 212 191 / .55); color: rgb(94 234 212); }
+.copilot-followups { margin-top: 1rem; }
+.copilot-followups > div { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .65rem; }
+.copilot-followup { border: 1px solid rgb(51 65 85); border-radius: .35rem; background: transparent; color: rgb(148 163 184); cursor: pointer; padding: .45rem .6rem; text-align: left; font-size: .75rem; }
+.copilot-followup:hover:not(:disabled) { border-color: rgb(45 212 191); color: rgb(204 251 241); }
+.copilot-followup:disabled { cursor: not-allowed; opacity: .55; }
+.copilot-loading { margin: 1rem 0 0; }
+.copilot-error { margin-bottom: 0; }
+.copilot-form { display: grid; gap: .55rem; margin-top: 1.25rem; border-top: 1px solid rgb(30 41 59); padding-top: 1rem; }
+.copilot-form label { color: rgb(203 213 225); font-size: .8rem; font-weight: 700; }
+.copilot-form textarea { width: 100%; resize: vertical; min-height: 5rem; border: 1px solid rgb(51 65 85); border-radius: .4rem; background: rgb(2 6 23); color: white; padding: .75rem; font: inherit; line-height: 1.5; outline: none; }
+.copilot-form textarea:focus { border-color: rgb(45 212 191); }
+.copilot-form textarea:disabled { cursor: wait; opacity: .7; }
+.copilot-form-footer > span { color: rgb(100 116 139); font-size: .72rem; }
+.postmortem-panel { border-color: rgb(217 119 6 / .55); }
+.postmortem-state { margin: 1.25rem 0 0; }
+.postmortem-error { margin-bottom: 0; }
+.postmortem-history { display: grid; gap: 1.5rem; margin-top: 1.25rem; }
+.postmortem-record + .postmortem-record { border-top: 1px solid rgb(51 65 85); padding-top: 1.5rem; }
+.postmortem-record-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.postmortem-record-heading h3 { margin: .3rem 0 0; color: white; font-size: 1.2rem; }
+.postmortem-record-heading time { font-size: .72rem; text-align: right; }
+.postmortem-section { margin-top: 1.1rem; border-top: 1px solid rgb(30 41 59); padding-top: .75rem; }
+.postmortem-section h4 { margin: 0; color: rgb(226 232 240); font-size: .8rem; }
+.postmortem-section > p, .postmortem-section ul, .postmortem-section ol { margin: .5rem 0 0; color: rgb(203 213 225); font-size: .84rem; line-height: 1.55; }
+.postmortem-section ul, .postmortem-section ol { display: grid; gap: .45rem; padding-left: 1.25rem; }
+.postmortem-section small { display: block; margin-top: .25rem; color: rgb(100 116 139); font-size: .72rem; overflow-wrap: anywhere; }
+.postmortem-timeline li time { display: block; color: rgb(94 234 212); font-size: .72rem; }
+.postmortem-timeline li span { display: block; }
 @media (max-width: 800px) { .app-frame { grid-template-columns: 1fr; }.sidebar { border-right: 0; border-bottom: 1px solid rgb(30 41 59); }.nav-label { margin-top: 1.5rem; }.nav-list { grid-template-columns: repeat(3, 1fr); }.sidebar-footer { display: none; }.metric-grid { grid-template-columns: repeat(2, 1fr); }.dashboard-grid, .detail-grid { grid-template-columns: 1fr; }.incident-header { flex-direction: column; } }
 @media (max-width: 640px) { .page-header, .list-row, .key-row { align-items: stretch; flex-direction: column; } .form-grid { grid-template-columns: 1fr; } .form-grid input:last-of-type { grid-column: auto; } .inline-form { flex-direction: column; } }
+@media (max-width: 640px) { .copilot-findings { grid-template-columns: 1fr; }.copilot-actions { grid-column: auto; }.copilot-answer { padding: .8rem; }.copilot-form-footer { align-items: flex-end; } }
+@media (max-width: 640px) { .postmortem-record-heading { flex-direction: column; }.postmortem-record-heading time { text-align: left; } }

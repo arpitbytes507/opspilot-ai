@@ -17,3 +17,9 @@ export const updateIncidentSchema = z.object({
   severity: z.enum(['P1', 'P2', 'P3', 'P4']).optional(),
   assignedToUserId: z.string().uuid().nullable().optional(),
 }).strict().refine((value) => Object.keys(value).length > 0, 'At least one field is required');
+
+export const aiCopilotRequestSchema = z.object({
+  message: z.string().trim().min(1).max(2000),
+}).strict();
+
+export const aiPostmortemRequestSchema = z.object({}).strict();

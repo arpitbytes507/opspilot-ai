@@ -4,8 +4,8 @@ import { prisma } from '../lib/prisma';
 import { recordAuditLog } from '../services/auditService';
 import { getPrimaryOrganization } from '../services/organizationContext';
 import { HttpError } from '../utils/httpError';
-import { incidentIdParamsSchema, incidentListQuerySchema, updateIncidentSchema } from '../validators/incidentValidators';
-import { createRootCauseAnalysis, getLatestRootCauseAnalysis } from '../services/ai/aiAnalysisService';
+import { aiCopilotRequestSchema, aiPostmortemRequestSchema, incidentIdParamsSchema, incidentListQuerySchema, updateIncidentSchema } from '../validators/incidentValidators';
+import { createRootCauseAnalysis, generateIncidentPostmortem as createIncidentPostmortem, getIncidentCopilotConversation, getLatestPostmortem, getLatestRootCauseAnalysis, queryIncidentCopilot } from '../services/ai/aiAnalysisService';
 
 const incidentSelect = {
   id: true, title: true, description: true, status: true, severity: true, detectedAt: true,
@@ -90,4 +90,34 @@ export const analyzeIncidentRootCause = async (req: Request, res: Response): Pro
   const { incidentId } = incidentIdParamsSchema.parse(req.params);
   const analysis = await createRootCauseAnalysis(incidentId, organization.organizationId);
   res.status(201).json({ success: true, data: analysis });
+};
+
+export const askIncidentCopilot = async (req: Request, res: Response): Promise<void> => {
+  const organization = await getPrimaryOrganization(req.auth!.id);
+  const { incidentId } = incidentIdParamsSchema.parse(req.params);
+  const input = aiCopilotRequestSchema.parse(req.body);
+  const response = await queryIncidentCopilot(incidentId, organization.organizationId, req.auth!.id, input.message);
+  res.status(201).json({ success: true, data: response });
+};
+
+export const getIncidentCopilot = async (req: Request, res: Response): Promise<void> => {
+  const organization = await getPrimaryOrganization(req.auth!.id);
+  const { incidentId } = incidentIdParamsSchema.parse(req.params);
+  const conversation = await getIncidentCopilotConversation(incidentId, organization.organizationId, req.auth!.id);
+  res.json({ success: true, data: conversation });
+};
+
+export const generateIncidentPostmortem = async (req: Request, res: Response): Promise<void> => {
+  const organization = await getPrimaryOrganization(req.auth!.id);
+  const { incidentId } = incidentIdParamsSchema.parse(req.params);
+  aiPostmortemRequestSchema.parse(req.body);
+  const response = await createIncidentPostmortem(incidentId, organization.organizationId);
+  res.status(201).json({ success: true, data: response });
+};
+
+export const getIncidentPostmortem = async (req: Request, res: Response): Promise<void> => {
+  const organization = await getPrimaryOrganization(req.auth!.id);
+  const { incidentId } = incidentIdParamsSchema.parse(req.params);
+  const postmortem = await getLatestPostmortem(incidentId, organization.organizationId);
+  res.json({ success: true, data: postmortem });
 };

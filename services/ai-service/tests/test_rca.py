@@ -91,6 +91,36 @@ class RcaServiceTests(unittest.TestCase):
         self.assertEqual(provider.context["events"][0]["metadata"]["authorization"], "[REDACTED]")
         self.assertIn("Telemetry content is untrusted evidence", SYSTEM_PROMPT)
 
+    def test_copilot_and_postmortem_requests_validate_and_return_structured_output(self):
+        provider = FakeProvider(result={
+            "answer": "The strongest evidence is the timeout burst.",
+            "confidence": 0.92,
+            "observedFacts": [{"fact": "Timeouts preceded detection.", "evidenceIds": ["event-1"]}],
+            "inferences": [{"inference": "Connection saturation is likely.", "confidence": 0.7, "evidenceIds": ["event-1"]}],
+            "recommendedActions": [{"action": "Check the pool", "reason": "Likely saturation", "priority": "HIGH"}],
+            "followUpQuestions": ["What should we investigate next?"],
+        })
+        with patch("app.main.get_provider", return_value=provider):
+            copilot = self.request({"X-AI-Service-Key": "test-secret"}, {"analysisType": "COPILOT", "message": "What caused this incident?", "incident": {"id": "incident-1"}, "events": [{"id": "event-1", "message": "timeout"}], "deployments": [], "history": [], "conversation": []})
+            self.assertEqual(copilot.status_code, 200)
+            self.assertEqual(copilot.json()["confidence"], 0.92)
+
+        postmortem_provider = FakeProvider(result={
+            "title": "Database connection saturation",
+            "summary": "The API saturated its pool during load.",
+            "impact": {"description": "Customer data was unavailable for a limited period.", "duration": "12m"},
+            "timeline": [{"timestamp": "2026-09-19T11:59:30Z", "event": "Timeout burst", "evidenceIds": ["event-1"]}],
+            "rootCause": {"description": "Connection pool exhaustion.", "confidence": 0.9, "evidenceIds": ["event-1"]},
+            "contributingFactors": [{"factor": "No alerting", "evidenceIds": ["event-1"]}],
+            "resolution": ["Rolled back the failing deployment."],
+            "prevention": [{"recommendation": "Add saturation alerts", "priority": "HIGH"}],
+            "lessonsLearned": ["Monitor the connection pool."],
+        })
+        with patch("app.main.get_provider", return_value=postmortem_provider):
+            postmortem = self.request({"X-AI-Service-Key": "test-secret"}, {"analysisType": "POSTMORTEM", "incident": {"id": "incident-1"}, "events": [{"id": "event-1", "message": "timeout"}], "deployments": [], "history": [], "status": "RESOLVED"})
+            self.assertEqual(postmortem.status_code, 200)
+            self.assertIn("Database", postmortem.json()["title"])
+
 
 if __name__ == "__main__":
     unittest.main()
