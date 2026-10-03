@@ -3,7 +3,11 @@ import { Queue } from 'bullmq';
 import { getRedisClient } from '../lib/redis';
 import type { NormalizedEvent } from '../types/ingestion';
 
-export const eventQueueName = 'event-processing';
+export const eventQueueName = process.env.NODE_ENV === 'development'
+  ? 'event-processing-dev'
+  : process.env.NODE_ENV === 'production'
+    ? 'event-processing-prod'
+    : 'event-processing';
 
 let eventQueue: Queue<NormalizedEvent> | undefined;
 
