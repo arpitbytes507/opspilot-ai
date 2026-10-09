@@ -10,19 +10,31 @@ import eventRoutes from './routes/eventRoutes';
 
 const app = express();
 
-const allowedOrigins = new Set([config.webOrigin, 'http://localhost:3000', 'http://127.0.0.1:3000']);
+const allowedOrigins = new Set([
+  'https://opspilot-ai-eta.vercel.app',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  config.webOrigin.replace(/\/$/, ''),
+]);
 
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.has(origin)) {
-      callback(null, true);
-      return;
+    const normalizedOrigin = origin?.replace(/\/$/, '');
+
+    if (!normalizedOrigin || allowedOrigins.has(normalizedOrigin)) {
+      return callback(null, true);
     }
 
-    callback(new Error('CORS origin not allowed'));
+    console.error('[CORS] Rejected origin:', JSON.stringify(origin));
+    console.error('[CORS] Allowed origins:', [...allowedOrigins]);
+
+    return callback(new Error('CORS origin not allowed'));
   },
   credentials: true,
+  methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
 app.use(requestIdMiddleware);
 app.use(loggerMiddleware);
 
