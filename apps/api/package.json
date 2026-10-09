@@ -8,6 +8,7 @@
     "build": "prisma generate --schema=prisma/schema.prisma && tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "worker": "node dist/worker.js",
+    "start:all": "node scripts/start-all.mjs",
     "lint": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:format": "prisma format",
