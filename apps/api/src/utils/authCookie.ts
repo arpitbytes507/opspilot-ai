@@ -4,12 +4,12 @@ import type { Response } from 'express';
 import { config } from '../config/env';
 import { createAuthToken } from '../services/authService';
 
-const maxAgeSeconds = 60 * 60 * 24;
+const maxAgeSeconds = 60 * 60 * 24 * 1000;
 
 const cookieOptions = {
   httpOnly: true,
-  secure: config.nodeEnv === 'production',
-  sameSite: 'lax' as const,
+  secure: true,
+  sameSite: 'none' as const,
   path: '/',
   maxAge: maxAgeSeconds,
 };
