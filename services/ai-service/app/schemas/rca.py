@@ -28,6 +28,11 @@ class AlternativeCause(BaseModel):
     cause: str = Field(min_length=1, max_length=1000)
     confidence: float = Field(ge=0, le=1)
 
+class ConversationMessage(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    role: Literal["USER", "ASSISTANT"]
+    content: str = Field(min_length=1, max_length=8000)
 
 class IncidentAnalysisRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -49,13 +54,6 @@ class IncidentAnalysisRequest(BaseModel):
         if self.analysisType == "POSTMORTEM" and self.status not in {"RESOLVED", "POSTMORTEM"}:
             raise ValueError("postmortem analysis requires a resolved incident")
         return self
-
-
-class ConversationMessage(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    role: Literal["USER", "ASSISTANT"]
-    content: str = Field(min_length=1, max_length=8000)
 
 
 class ObservedFact(BaseModel):
